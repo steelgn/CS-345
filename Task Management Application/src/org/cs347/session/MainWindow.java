@@ -12,6 +12,8 @@ import javax.swing.JList;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JMenuItem;
+import javax.swing.JPasswordField;
+import javax.swing.JTextField;
 import javax.swing.JTree;
 import javax.swing.JLabel;
 
@@ -22,6 +24,7 @@ import org.cs347.tasks.User;
 import java.awt.Dimension;
 import java.awt.GridBagLayout;
 import java.awt.GridBagConstraints;
+import java.awt.HeadlessException;
 import java.awt.Insets;
 import java.awt.GridLayout;
 import java.awt.event.ActionListener;
@@ -34,6 +37,9 @@ import java.awt.Color;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.BorderLayout;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+
 import javax.swing.JTextArea;
 import javax.swing.JButton;
 
@@ -41,6 +47,8 @@ public class MainWindow implements MouseListener{
 	final DefaultListModel<TaskList> model = new DefaultListModel<TaskList>();
 	final DefaultListModel<Task> taskModel = new DefaultListModel<Task>();
 	private JFrame frmTaskManagementApp;
+	JMenuBar menuBar;
+	private JPanel wrapperPanel;
 	private JLabel lblList, lblDueDate, lblTaskName, lblStatus;
 	private JTextArea textArea;
 	public JList<TaskList> taskLists;
@@ -51,10 +59,10 @@ public class MainWindow implements MouseListener{
 	JMenuItem mntmCreateNewTask, mntmEditSelected, mntmDeleteSelected, mntmViewSubtasks, mntmAddSubtask;
 	/**
 	 * Launch the application.
+	 * @throws IOException 
 	 */
-	public static void main(String[] args) {
-		Session.setUser(new User("root", "1234"));		
-		Session.setActiveTaskList(new TaskList("NONE", Session.returnUser()));
+	public static void main(String[] args) throws IOException {
+		Session.createFiles();
 		EventQueue.invokeLater(new Runnable() {
 			public void run() {
 				try {
@@ -84,15 +92,134 @@ public class MainWindow implements MouseListener{
 		frmTaskManagementApp.setBounds(100, 100, 800, 600);
 		frmTaskManagementApp.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		
-		JMenuBar menuBar = new JMenuBar();
+		wrapperPanel = new JPanel();
+		wrapperPanel.setLayout(new BorderLayout(0, 0));
+		frmTaskManagementApp.getContentPane().add(loginWindow());
 		frmTaskManagementApp.setJMenuBar(menuBar);
+	
+	}
+	
+	private void createChangePanel(JPanel p){
+		frmTaskManagementApp.getContentPane().removeAll();
+		frmTaskManagementApp.getContentPane().add(p);
+		frmTaskManagementApp.setJMenuBar(menuBar);
+		frmTaskManagementApp.validate();
+		frmTaskManagementApp.setVisible(true);
+		
+	}
+	
+	public JPanel loginWindow(){
+		JPanel parentPanel = new JPanel(new BorderLayout(0, 0));
+		JPanel entryPanel = new JPanel();
+		parentPanel.add(entryPanel, BorderLayout.NORTH);
+		entryPanel.setLayout(new GridLayout(2, 2, 1, 0));
+		
+		entryPanel.add(new JLabel("Username: "));
+		final JTextField userNameField = new JTextField();
+		entryPanel.add(userNameField);
+		entryPanel.add(new JLabel("Password: "));
+		final JPasswordField passwordField = new JPasswordField();
+		entryPanel.add(passwordField);
+		
+		JPanel buttonSection = new JPanel(new GridLayout(2, 2, 1, 1));
+		parentPanel.add(buttonSection, BorderLayout.CENTER);
+		
+		
+		final JButton loginButton = new JButton("Login");
+		buttonSection.add(loginButton);
+		loginButton.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e){
+				
+				try {
+					if (Login.validateLogin(userNameField.getText(), new String(passwordField.getPassword())))
+					{
+						try {
+							Login.login(userNameField.getText());
+							createChangePanel(initEditorWindow());
+							
+						} catch (IOException e1) {
+							// TODO Auto-generated catch block
+							e1.printStackTrace(); }
+					}
+					else {
+						JOptionPane.showMessageDialog(loginButton, "Invalid Username/Password Combination.", 
+								"Invalid Credentials", JOptionPane.ERROR_MESSAGE);
+					}
+					
+				} catch (HeadlessException | IOException e1) {
+					// TODO Auto-generated catch block
+					e1.printStackTrace();
+				}
+			}
+		});
+			
+		
+		
+			
+		
+		JButton newUserButton = new JButton("New User");
+		buttonSection.add(newUserButton);
+		newUserButton.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e){
+				UserCreationFrame ucf = new UserCreationFrame();
+				ucf.setVisible(true);
+			}
+		});
+		
+		JButton recoverPwordBtn = new JButton("Lost Password?");
+		buttonSection.add(recoverPwordBtn);
+		recoverPwordBtn.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e){
+				UserRecoveryFrame urf = new UserRecoveryFrame();
+				urf.setVisible(true);
+			}
+		});
+		
+		return parentPanel;
+	}
+	
+	
+	
+	public JPanel initEditorWindow(){
+		JPanel parentPanel = new JPanel(new BorderLayout(0, 0));
+		
+		menuBar = new JMenuBar();
+		frmTaskManagementApp.setJMenuBar(menuBar);
+		frmTaskManagementApp.add(menuBar);
+		
+		JMenu mnUser = new JMenu("User");
+		menuBar.add(mnUser);
+		
+			JMenuItem mnumSignIn = new JMenuItem("Sign Out");
+			mnumSignIn.addActionListener(new ActionListener() {
+				public void actionPerformed(ActionEvent e) {
+					try {
+						Session.storeSession();
+					} catch (FileNotFoundException e1) {
+						// TODO Auto-generated catch block
+						e1.printStackTrace();
+					}
+					createChangePanel(loginWindow());
+				}
+			});
+			mnUser.add(mnumSignIn);
+			
+			JMenuItem mnumUpdateProf =  new JMenuItem("Update Profile...");
+			mnumUpdateProf.addActionListener(new ActionListener() {
+				public void actionPerformed(ActionEvent e) {
+					UserUpdateFrame uuf = new UserUpdateFrame();
+					uuf.setVisible(true);
+				}
+			});
+			mnumUpdateProf.add(menuBar);
+			
 		
 		JMenu mnTaskList = new JMenu("Task List");
 		menuBar.add(mnTaskList);
 		frmTaskManagementApp.getContentPane().setLayout(new BorderLayout(0, 0));
 		
 		JPanel listPanel = new JPanel();
-		frmTaskManagementApp.getContentPane().add(listPanel, BorderLayout.WEST);
+		parentPanel.add(listPanel, BorderLayout.WEST);
 		listPanel.setLayout(new GridLayout(2, 1, 0, 0));
 		
 		taskLists = new JList<TaskList>(model);
@@ -105,7 +232,7 @@ public class MainWindow implements MouseListener{
 		for (TaskList tl : Session.returnUser().getLists()) {
 			model.addElement(tl);
 		}
-		mntmNewTaskList = new JMenuItem("New Task List");
+		mntmNewTaskList = new JMenuItem("New Task List...");
 		mntmNewTaskList.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				createNewList();
@@ -113,7 +240,7 @@ public class MainWindow implements MouseListener{
 		});
 		mnTaskList.add(mntmNewTaskList);
 		
-		mntmRenameSelectedList = new JMenuItem("Rename Selected List");
+		mntmRenameSelectedList = new JMenuItem("Rename Selected List...");
 		mntmRenameSelectedList.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				renameList();
@@ -121,7 +248,7 @@ public class MainWindow implements MouseListener{
 		});
 		mnTaskList.add(mntmRenameSelectedList);
 		
-		mntmDeleteSelectedList = new JMenuItem("Delete Selected List");
+		mntmDeleteSelectedList = new JMenuItem("Delete Selected List...");
 		mntmDeleteSelectedList.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				deleteList();
@@ -134,7 +261,7 @@ public class MainWindow implements MouseListener{
 		
 
 		
-		mntmCreateNewTask = new JMenuItem("Create New Task");
+		mntmCreateNewTask = new JMenuItem("Create New Task...");
 		mnTask.add(mntmCreateNewTask);
 		mntmCreateNewTask.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
@@ -142,7 +269,7 @@ public class MainWindow implements MouseListener{
 			}
 		});
 		
-		mntmEditSelected = new JMenuItem("Edit Selected Task");
+		mntmEditSelected = new JMenuItem("Edit Selected Task...");
 		mntmEditSelected.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				TaskUpdateForm tuf = new TaskUpdateForm(tasks.getSelectedValue());
@@ -150,7 +277,7 @@ public class MainWindow implements MouseListener{
 			}
 		});
 		
-		mntmAddSubtask = new JMenuItem("Add Subtask");
+		mntmAddSubtask = new JMenuItem("Add Subtask...");
 		mntmAddSubtask.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				SubtaskCreationForm stcf = new SubtaskCreationForm(tasks.getSelectedValue());
@@ -191,12 +318,12 @@ public class MainWindow implements MouseListener{
 		tasks.addMouseListener(mouseListener);
 		
 		detailPanel.add(tasks);
-		frmTaskManagementApp.getContentPane().add(detailPanel, BorderLayout.CENTER);
+		parentPanel.add(detailPanel, BorderLayout.CENTER);
 		
 		
 		
 		JPanel textPanel = new JPanel();
-		frmTaskManagementApp.getContentPane().add(textPanel, BorderLayout.EAST);
+		parentPanel.add(textPanel, BorderLayout.EAST);
 		textPanel.setLayout(new GridLayout(6, 2, 0, 0));
 		
 		lblTaskName = new JLabel("Task Name: ");
@@ -230,12 +357,15 @@ public class MainWindow implements MouseListener{
 		textPanel.add(btnToggleStatus);
 		
 		JPanel panelNorth = new JPanel();
-		frmTaskManagementApp.getContentPane().add(panelNorth, BorderLayout.NORTH);
+		parentPanel.add(panelNorth, BorderLayout.NORTH);
 		
 		lblList = new JLabel("Active List: " + Session.getActiveTaskList().getName());
 		panelNorth.add(lblList);
 		frmTaskManagementApp.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+		
+		return parentPanel;
 	}
+	
 	public void update(){
 		lblList.setText("Active Task: " + Session.getActiveTaskList().getName());
 		

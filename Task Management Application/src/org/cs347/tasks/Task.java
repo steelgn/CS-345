@@ -30,6 +30,15 @@ public class Task {
 		priority = pri;
 	}
 	
+	public Task(String title, boolean st, Date due, int pri, String dsc, LinkedList<Task> subs){
+		name = title;
+		desc = dsc;
+		subTasks = subs;
+		status = st;
+		dueDate = due;
+		priority = pri;
+	}
+	
 	public boolean isCompleted(){
 		return status;
 	}
@@ -112,6 +121,19 @@ public class Task {
 		xml = xml + "</SubTasks></Task>";
 		return xml;
 	}
+	public String toFileString(){
+		return toFileString("");
+	}
+	public String toFileString(String pre){
+		String prefix = pre;
+		String out = prefix + "Task,," + name + ",," + status + ",," +sdf.format(dueDate) + ",," + priority + ",,"
+				+ desc+ "\n";
+		for (Task t : subTasks){
+			out = out + t.toFileString("\t"+prefix);
+		}
+		return out;
+	}
+	
 	public String toString(){
 		return (getName() + ((status) ? " (Completed)" : ""));
 	}

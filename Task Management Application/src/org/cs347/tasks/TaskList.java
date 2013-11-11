@@ -1,5 +1,4 @@
 package org.cs347.tasks;
-import java.util.ArrayList;
 import java.util.*;
 
 public class TaskList {
@@ -11,16 +10,24 @@ public class TaskList {
 	private ArrayList<Task> taskList;
 	private ArrayList<String> userList;
 	private boolean complete;
-	private ArrayList<String> l;
+
 	
 	public TaskList(String title, User creator){
 		name = title;
 		taskList = new ArrayList<Task>();
 		userList = new ArrayList<String>();
-		userList.add(creator.getNameID());
+		userList.add(creator.getName());
 		complete = false;
 	}
+	public TaskList(String title, User creator, ArrayList<Task> tasks){
+		name = title;
+		complete = false;
+		userList = new ArrayList<String>();
+		userList.add(creator.getName());
+		taskList = tasks;
+	}
 	
+
 	public void addTask(Task t){
 		taskList.add(t);
 	}
@@ -40,7 +47,9 @@ public class TaskList {
 	public void setName(String s){
 		name = s;
 	}
-	
+	public boolean getComplete(){
+		return complete;
+	}
 	public void addUser(User u){
 		if (!hasPermission(u)) userList.add(u.getNameID());
 	}
@@ -91,23 +100,17 @@ public class TaskList {
 		}
 	}
 	
-	private String toXML(){
-		String xml = "<TaskList><Name>" + name + "<Name>" +
-					"<Users>";
-		for (String s : userList) {
-			xml = xml + "<User>" + s +"</User>";
-		}
-		xml = xml + "</Users><Tasks>";
-		for (Task t : taskList) {
-			xml = xml + t.toXML();
-		}
-		xml = xml +"</Tasks><Status>" + complete + "</Status></TaskList>";
-		return xml;
-	}
 	public String toString(){
 		return name;
 	}
 	public ArrayList<Task> getTaskList(){
 		return taskList;
+	}
+	public String toOutputString(){
+		String output = "User,"+this.getUsers().get(0)+","+this.getName()+"\n";
+		for (Task t: this.getTaskList()){
+			output = output + t.toFileString();
+		}
+		return output;
 	}
 }
